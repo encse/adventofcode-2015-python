@@ -1,5 +1,4 @@
 import fileinput
-import re
 import json
 
 def process(obj, filter):
