@@ -5,20 +5,17 @@ from numpy import *
 def mixtures(ingredient_count, total_amount):
 	if ingredient_count == 1:
 		yield [total_amount]
-	else :
+	else:
 		for amount in xrange(0, total_amount + 1):
 			for mixture in mixtures(ingredient_count - 1, total_amount - amount):
 				yield [amount] + mixture
 
-def get_ingredients():
-	ingredients = []
-	for line in fileinput.input():
-		m = re.match('(.*): capacity (.*), durability (.*), flavor (.*), texture (.*), calories (.*)', line)
-		ingredients.append([int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6))])
-	
-	return matrix(ingredients)
+ingredients = []
+for line in fileinput.input():
+	m = re.match('(.*): capacity (.*), durability (.*), flavor (.*), texture (.*), calories (.*)', line)
+	ingredients.append([int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6))])
 
-ingredients = get_ingredients()
+ingredients = matrix(ingredients)
 
 max_score1 = 0
 max_score2 = 0
