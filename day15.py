@@ -20,17 +20,17 @@ def get_ingredients():
 
 ingredients = get_ingredients()
 
-ingredient_count = len(ingredients)
+max_score1 = 0
+max_score2 = 0
 
-max_value1 = 0
-max_value2 = 0
-for mixture in mixtures(ingredient_count,100):
-	v = maximum(array([0,0,0,0,0]), (matrix([[1]*ingredient_count]) *  diag(mixture) * ingredients).A1)
-	calories = v[4]
-	value = prod(v[0:4])
-	max_value1 = max(max_value1, value)
-	if calories == 500:
-		max_value2 = max(max_value2, value)
+for mixture in mixtures(len(ingredients),100):
+	v = mixture * ingredients
+	if all(v >= 0):
+		score = prod(v[0,0:4])
+		calories = v[0,4]
+		max_score1 = max(max_score1, score)
+		if calories == 500:
+		 	max_score2 = max(max_score2, score)
 	
-print max_value1
-print max_value2
+print max_score1
+print max_score2
