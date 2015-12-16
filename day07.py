@@ -1,23 +1,19 @@
-import re
 import fileinput
+import re
 
 calc = {}
-class wire:
-	def __init__(self, out, inputs, logic):
-		self.inputs = inputs
-   	 	self.logic = logic
-   	 	self.out = out
-
-	def eval(self):
-		if self.out not in values:
-			args = [int(inp) if inp.isdigit() else calc[inp]() for inp in self.inputs]
-			values[self.out] = self.logic(*args)
-		return values[self.out] 
-
 def gate(st, pattern, logic):
 	m = re.match(pattern, st)
 	if m:
-		calc[m.groups()[-1]] = wire(m.groups()[-1], m.groups()[:-1], logic).eval
+		out = m.groups()[-1]
+		inputs = m.groups()[:-1]
+
+		def eval():
+			if out not in values:
+				args = [int(inp) if inp.isdigit() else calc[inp]() for inp in inputs]
+				values[out] = logic(*args)
+			return values[out] 
+		calc[out] = eval
 	return m
 
 for line in fileinput.input():
@@ -29,7 +25,6 @@ for line in fileinput.input():
 	if gate(line, '(.*) -> (.*)', lambda in1: in1): continue
 
 values = {}
-res1 = calc['a']()
-values = {'b': res1}
-print res1
+print calc['a']()
+values = {'b': values['a']}
 print calc['a']()
