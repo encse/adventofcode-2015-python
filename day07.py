@@ -2,19 +2,22 @@ import re
 import fileinput
 
 wires = {}
+class wire:
+	def __init__(self, inputs, logic):
+		self.inputs = inputs
+   	 	self.logic = logic
+   	 	self.value = None
+
+	def eval(self):
+		if not self.value:
+			args = [int(inp) if inp.isdigit() else wires[inp].eval() for inp in self.inputs]
+			self.value = self.logic(*args)
+		return self.value 
+
 def gate(st, pattern, logic):
 	m = re.match(pattern, st)
 	if m:
-		state = {'val':None, 't':0}
-		inputs = m.groups()[:-1] 
-		output = m.groups()[-1]
-		def wire():
-			if not state['val'] or t != state['t'] :
-				args = [int(inp) if inp.isdigit() else wires[inp]() for inp in inputs]
-				state['val'] = logic(*args)
-				state['t'] = t
-			return state['val'] 
-		wires[output] = wire
+		wires[m.groups()[-1]] = wire(m.groups()[:-1], logic)
 	return m
 
 for line in fileinput.input():
@@ -25,10 +28,11 @@ for line in fileinput.input():
 	if gate(line, 'NOT (.*) -> (.*)', lambda in1: ~in1): continue
 	if gate(line, '(.*) -> (.*)', lambda in1: in1): continue
 
-t = 0
-res1 = wires['a']()
-wires['b'] = lambda : res1
-t = 1
-res2 = wires['a']()
+res1 = wires['a'].eval()
+
+for key in wires: 
+	wires[key].value = None 
+wires['b'].value = res1
+
 print res1
-print res2
+print wires['a'].eval()
