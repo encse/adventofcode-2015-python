@@ -1,23 +1,23 @@
 import re
 import fileinput
 
-wires = {}
+calc = {}
 class wire:
-	def __init__(self, inputs, logic):
+	def __init__(self, out, inputs, logic):
 		self.inputs = inputs
    	 	self.logic = logic
-   	 	self.value = None
+   	 	self.out = out
 
 	def eval(self):
-		if not self.value:
-			args = [int(inp) if inp.isdigit() else wires[inp].eval() for inp in self.inputs]
-			self.value = self.logic(*args)
-		return self.value 
+		if self.out not in values:
+			args = [int(inp) if inp.isdigit() else calc[inp]() for inp in self.inputs]
+			values[self.out] = self.logic(*args)
+		return values[self.out] 
 
 def gate(st, pattern, logic):
 	m = re.match(pattern, st)
 	if m:
-		wires[m.groups()[-1]] = wire(m.groups()[:-1], logic)
+		calc[m.groups()[-1]] = wire(m.groups()[-1], m.groups()[:-1], logic).eval
 	return m
 
 for line in fileinput.input():
@@ -28,11 +28,8 @@ for line in fileinput.input():
 	if gate(line, 'NOT (.*) -> (.*)', lambda in1: ~in1): continue
 	if gate(line, '(.*) -> (.*)', lambda in1: in1): continue
 
-res1 = wires['a'].eval()
-
-for key in wires: 
-	wires[key].value = None 
-wires['b'].value = res1
-
+values = {}
+res1 = calc['a']()
+values = {'b': res1}
 print res1
-print wires['a'].eval()
+print calc['a']()
