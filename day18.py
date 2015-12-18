@@ -12,7 +12,8 @@ def lit_corners(tbl):
 def step(tbl):
 	tblNew = dup(tbl)
 	
-	for (irow, icol, ch) in [(irow, icol, tbl[irow][icol]) for irow in xrange(0, crow) for icol in xrange(0, ccol)]:
+	for (irow, icol) in [(irow, icol) for irow in xrange(0, crow) for icol in xrange(0, ccol)]:
+		ch = tbl[irow][icol]
 		c_neighbour = 0
 		for (dx,dy) in [(-1,-1), (0,-1), (1,-1), (-1,0), (1,0), (-1,1), (0,1), (1,1)]:
 			(icolN, irowN) = (icol + dx, irow +dy)
