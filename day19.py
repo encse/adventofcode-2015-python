@@ -1,64 +1,38 @@
 import sys
+
+def apply_rule(molecule, rule, i): 
+	return molecule[:i] + rule[1] + molecule[(i+len(rule[0])):] 
+
+def match(molecule, rule, i): 
+	return molecule[i:].startswith(rule[0])
+
+def get_first_match(molecule, rules): 
+	return next ((i for i in xrange(len(molecule)) for rule in rules if match(molecule, rule, i)), None)
+
+def get_next_molecules(molecule, rules, lookahead):
+	i = get_first_match(molecule, rules)
+	if i == None: return []
+	return set([apply_rule(molecule, rule, j)
+			for j in xrange(i, i+lookahead)
+			for rule in rules 
+			if match(molecule, rule, j)])
+	
 rules = []
 for line in sys.stdin:
 	line = line.strip()
 	if line == "": 
+		goal = next(sys.stdin)
 		break
 	rules.append(line.split(" => "))
 
-goal = next(sys.stdin)
+print len(get_next_molecules(goal, rules, len(goal)))
 
-def prev(src, seen):
-	dst = set()
-	iStart = 0;
-	iLim = 0
-	i0 = None
-	i=0
-	for i in xrange(0, len(src)):
-		l = 0
-		for rule in rules:
-			if src[i:].startswith(rule[1]):
-				m = {src[:i] + rule[0] + src[(i+len(rule[1])):]}
-				if m not in seen:
-					dst |= m
-					l = max(l, len(rule[0]))
-		if len(dst) > 0:
-			i0 = i+1
-			iLim = i+l+1
-			break
-	if i0:
-		for i in xrange(i0, iLim):
-			for rule in rules:
-				if src[i:].startswith(rule[1]):
-					m = {src[:i] + rule[0] + src[(i+len(rule[1])):]}
-					if m not in seen:
-						dst |= m
-	return dst
+lookahead = max(map(lambda rule: len(rule[1]), rules)) # longest rule
+rules = map(lambda rule: rule[::-1], rules)	# we go backwards so change the left and right side of the rules
 
-def step(src):
-	dst = set()
-	for i in xrange(0, len(src)):
-		for rule in rules:
-			if src[i:].startswith(rule[0]):
-				m = {src[:i] + rule[1] + src[(i+len(rule[0])):]}
-				dst |= m
-	return dst
-
-print len(step(goal))
-
-current = {goal}
-seen = set(current)
-
+molecules = {goal}
 i = 0
-while not 'e' in current:
-	next = set()
+while not 'e' in molecules:
+	molecules = set([next_molecule for molecule in molecules for next_molecule in get_next_molecules(molecule, rules, lookahead)])
 	i += 1
-	for m in current:
-		next |= prev(m, seen)
-		if goal in next: break
-	seen |= next
-	current = next
-
-	if not len(current): raise 'coki'
-
 print i
