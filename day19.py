@@ -4,7 +4,7 @@ def apply_rule(molecule, rule, i):
 	return molecule[:i] + rule[1] + molecule[(i+len(rule[0])):] 
 
 def match(molecule, rule, i): 
-	return molecule[i:].startswith(rule[0])
+	return molecule.find(rule[0], i, i+len(rule[0])) == i
 
 def get_first_match(molecule, rules): 
 	return next ((i for i in xrange(len(molecule)) for rule in rules if match(molecule, rule, i)), None)
