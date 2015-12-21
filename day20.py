@@ -1,5 +1,5 @@
-dsum1 = [1] * 5000000
-dsum2 = [1] * 5000000
+dsum1 = [1] * 3600000
+dsum2 = [1] * 3600000
 i=2
 res1 = None
 res2 = None
@@ -21,4 +21,3 @@ while True:
 
 print res1
 print res2
-
