@@ -1,3 +1,4 @@
+original source: [http://adventofcode.com/day/18](http://adventofcode.com/day/18)
 ## --- Day 18: Like a GIF For Your Yard ---
 After the [million lights incident](/day/6), the fire code has gotten stricter: now, at most ten thousand lights are allowed.  You arrange them in a 100x100 grid.
 
@@ -10,13 +11,13 @@ Then, animate your grid in steps, where each step decides the next configuration
 For example, in a simplified 6x6 grid, the light marked `A` has the neighbors numbered `1` through `8`, and the light marked `B`, which is on an edge, only has the neighbors marked `1` through `5`:
 
 ```
-`1B5...
+1B5...
 234...
 ......
 ..123.
 ..8A4.
 ..765.
-````
+```
 
 The state a light should have next is based on its current state (on or off) plus the *number of neighbors that are on*:
 
@@ -29,7 +30,7 @@ All of the lights update simultaneously; they all consider the same current stat
 Here's a few steps from an example configuration of another 6x6 grid:
 
 ```
-`Initial state:
+Initial state:
 .#.#.#
 ...##.
 #....#
@@ -68,7 +69,7 @@ After 4 steps:
 ..##..
 ......
 ......
-````
+```
 
 After `4` steps, this example has four lights on.
 
@@ -79,7 +80,7 @@ In your grid of 100x100 lights, given your initial configuration, *how many ligh
 You flip the instructions over; Santa goes on to point out that this is all just an implementation of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway's_Game_of_Life).  At least, it was, until you notice that something's wrong with the grid of lights you bought: four lights, one in each corner, are *stuck on* and can't be turned off.  The example above will actually run like this:
 
 ```
-`Initial state:
+Initial state:
 ##.#.#
 ...##.
 #....#
@@ -126,7 +127,7 @@ After 5 steps:
 .##...
 #.#...
 ##...#
-````
+```
 
 After `5` steps, this example now has `17` lights on.
 

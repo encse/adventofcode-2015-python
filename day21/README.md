@@ -1,3 +1,4 @@
+original source: [http://adventofcode.com/day/21](http://adventofcode.com/day/21)
 ## --- Day 21: RPG Simulator 20XX ---
 Little Henry Case got a new video game for Christmas.  It's an [RPG](https://en.wikipedia.org/wiki/Role-playing_video_game), and he's stuck on a boss.  He needs to know what equipment to buy at the shop.  He hands you the [controller](https://en.wikipedia.org/wiki/Game_controller).
 
@@ -10,7 +11,7 @@ Your damage score and armor score both start at zero.  They can be increased by 
 Here is what the item shop is selling:
 
 ```
-`Weapons:    Cost  Damage  Armor
+Weapons:    Cost  Damage  Armor
 Dagger        8     4       0
 Shortsword   10     5       0
 Warhammer    25     6       0
@@ -31,7 +32,7 @@ Damage +3   100     3       0
 Defense +1   20     0       1
 Defense +2   40     0       2
 Defense +3   80     0       3
-````
+```
 
 You must buy exactly one weapon; no dual-wielding.  Armor is optional, but you can't use more than one.  You can buy 0-2 rings (at most one for each hand).  You must use any items you buy.  The shop only has one of each item, so you can't buy, for example, two rings of Damage +3.
 

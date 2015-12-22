@@ -1,3 +1,4 @@
+original source: [http://adventofcode.com/day/20](http://adventofcode.com/day/20)
 ## --- Day 20: Infinite Elves and Infinite Houses ---
 To keep the Elves busy, Santa has them deliver some presents by hand, door-to-door.  He sends them down a street with infinite houses numbered sequentially: `1`, `2`, `3`, `4`, `5`, and so on.
 
@@ -13,7 +14,7 @@ There are infinitely many Elves, numbered starting with `1`.  Each Elf delivers 
 So, the first nine houses on the street end up like this:
 
 ```
-`House 1 got 10 presents.
+House 1 got 10 presents.
 House 2 got 30 presents.
 House 3 got 40 presents.
 House 4 got 70 presents.
@@ -22,7 +23,7 @@ House 6 got 120 presents.
 House 7 got 80 presents.
 House 8 got 150 presents.
 House 9 got 130 presents.
-````
+```
 
 The first house gets `10` presents: it is visited only by Elf `1`, which delivers `1 * 10 = 10` presents.  The fourth house gets `70` presents, because it is visited by Elves `1`, `2`, and `4`, for a total of `10 + 20 + 40 = 70` presents.
 

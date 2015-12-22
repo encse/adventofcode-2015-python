@@ -1,3 +1,4 @@
+original source: [http://adventofcode.com/day/22](http://adventofcode.com/day/22)
 ## --- Day 22: Wizard Simulator 20XX ---
 Little Henry Case decides that defeating bosses with [swords and stuff](/day/21) is boring.  Now he's playing the game with a wizard.  Of course, he gets stuck on another boss and needs your help again.
 
@@ -19,7 +20,7 @@ On each of your turns, you must select one of your spells to cast.  If you canno
 For example, suppose the player has `10` hit points and `250` mana, and that the boss has `13` hit points and `8` damage:
 
 ```
-`-- Player turn --
+-- Player turn --
 - Player has 10 hit points, 0 armor, 250 mana
 - Boss has 13 hit points
 Player casts Poison.
@@ -40,12 +41,12 @@ Player casts Magic Missile, dealing 4 damage.
 - Player has 2 hit points, 0 armor, 24 mana
 - Boss has 3 hit points
 Poison deals 3 damage. This kills the boss, and the player wins.
-````
+```
 
 Now, suppose the same initial conditions, except that the boss has `14` hit points instead:
 
 ```
-`-- Player turn --
+-- Player turn --
 - Player has 10 hit points, 0 armor, 250 mana
 - Boss has 14 hit points
 Player casts Recharge.
@@ -109,7 +110,7 @@ Player casts Magic Missile, dealing 4 damage.
 - Player has 1 hit point, 0 armor, 114 mana
 - Boss has 2 hit points
 Poison deals 3 damage. This kills the boss, and the player wins.
-````
+```
 
 You start with *50 hit points* and *500 mana points*. The boss's actual stats are in your puzzle input. What is the *least amount of mana* you can spend and still win the fight?  (Do not include mana recharge effects as "spending" negative mana.)
 

@@ -1,3 +1,4 @@
+original source: [http://adventofcode.com/day/19](http://adventofcode.com/day/19)
 ## --- Day 19: Medicine for Rudolph ---
 Rudolph the Red-Nosed Reindeer is sick!  His nose isn't shining very brightly, and he needs medicine.
 
@@ -10,10 +11,10 @@ However, the machine has to be calibrated before it can be used.  Calibration in
 For example, imagine a simpler machine that supports only the following replacements:
 
 ```
-`H => HO
+H => HO
 H => OH
 O => HH
-````
+```
 
 Given the replacements above and starting with `HOH`, the following molecules could be generated:
 
@@ -39,12 +40,12 @@ Molecule fabrication always begins with just a single electron, `e`, and applyin
 For example, suppose you have the following replacements:
 
 ```
-`e => H
+e => H
 e => O
 H => HO
 H => OH
 O => HH
-````
+```
 
 If you'd like to make `HOH`, you start with `e`, and then make the following replacements:
 

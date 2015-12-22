@@ -1,8 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
 import sys
+import os
 
-res = requests.get('http://adventofcode.com/day/' + sys.argv[1], cookies = {'session':'53616c7465645f5fef2d460d09fc69d2f5f6d751a69109c4011474ca0a115c0adc365989982e17b990af7ffd5aa5ecc8'})
+url = 'http://adventofcode.com/day/' + sys.argv[1]
+if not 'SESSION' in os.environ:
+    raise Exception('Cannot find SESSION environment variable')
+    
+res = requests.get(url, cookies = {'session':os.environ['SESSION']})
 content =  res.text
 soup = BeautifulSoup(content, 'html.parser')
 
@@ -19,7 +24,10 @@ def unparse(tag):
     elif tag.name == 'em':
         yield  '*' + unparse_list('', tag) + '*'
     elif tag.name == 'code':
-        yield  '`'+ unparse_list('', tag) + '`'
+        if tag.parent.name == 'pre':
+            yield unparse_list('', tag)
+        else:
+            yield  '`'+ unparse_list('', tag) + '`'
     elif tag.name == 'span':
         yield  unparse_list('', tag) 
     elif tag.name == 'ul':
@@ -40,7 +48,7 @@ def unparse(tag):
     else:
         raise Exception(tag.name)
 
+print 'original source: [{0}]({0})'.format(url)
+
 for article in soup.findAll("article"):
     print unparse_list('', article)
-
-# //7 9 13 15 16 18
