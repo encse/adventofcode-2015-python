@@ -1,3 +1,4 @@
+original source: [http://adventofcode.com/day/12](http://adventofcode.com/day/12)
 ## --- Day 12: JSAbacusFramework.io ---
 Santa's Accounting-Elves need help balancing the books after a recent order.  Unfortunately, their accounting software uses a peculiar storage format.  That's where you come in.
 

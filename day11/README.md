@@ -1,3 +1,4 @@
+original source: [http://adventofcode.com/day/11](http://adventofcode.com/day/11)
 ## --- Day 11: Corporate Policy ---
 Santa's previous password expired, and he needs help choosing a new one.
 
