@@ -1,145 +1,92 @@
-import itertools as it
-import sys
-
-def spell(mana=0, time=0):
-	class Spell:
-		def cast(self, player, other_player): pass
-		def effect_over_time(self, player, other_player): pass
-		def wear_off(self, player, other_player): pass
-		def dup(self):
-			clone = self.__class__()
-			clone.time = self.time
-			return clone
-	Spell.mana, Spell.time = mana, time
-	return Spell
-
-def attack(damage):
-	class Action(spell()):
-		def cast(self, player, other_player):
-			other_player.damage(damage)
-	return Action
-
-def magic_missile(mana, damage):
-	class Action(spell(mana)):
-		def cast(self, player, other_player):
-			other_player.damage(damage)
-	return Action
-
-def drain(mana, damage, heal):
-	class Action(spell(mana)):
-		def cast(self, player, other_player):
-			player.heal(heal)
-			other_player.damage(damage)
-	return Action
-
-def shield(mana, time, armor):
-	class Action(spell(mana,time)):
-		def cast(self, player, other_player):
-			player.armor += armor
-
-		def wear_off(self, player, other_player):
-			player.armor -= armor
-	return Action
-
-def poison(mana, time, damage):
-	class Action(spell(mana, time)):
-		def effect_over_time(self, player, other_player):
-			other_player.damage(damage)
-	return Action
-
-def recharge(mana, time, mana_recharged):
-	class Action(spell(mana, time)):
-		def effect_over_time(self, player, other_player):
-			player.mana += mana_recharged
-	return Action
-
 class Player:
-	def __init__(self, base_hp, base_mana):
-		self.hp = self.base_hp = base_hp
-		self.armor = self.base_armor = 0
-		self.mana = self.base_mana = base_mana
-		self.spell_book = []
-		self.active_spells = []
-		self.mana_spent = 0
-		
-	def with_spell(self, spell):
-		self.spell_book.append(spell)
-		return self
+	def __init__(self, base_hp, spells, mana_spent, mana, hp, spell_timers,  armor):
+		self.base_hp = base_hp
+		self.spells = spells
+		self.mana_spent = mana_spent
+		self.mana = mana
+		self.hp = hp
+		self.spell_timers = spell_timers
+		self.armor = armor
+
+	@staticmethod
+	def create(base_hp, base_mana, spells):
+		return Player(base_hp, { spell.name: spell for spell in spells }, 0, base_mana, base_hp, {}, 0)
 
 	def dup(self):
-		clone = Player(self.base_hp, self.base_mana)
-		clone.spell_book = self.spell_book 
-		clone.mana_spent = self.mana_spent
-		clone.mana = self.mana
-		clone.hp = self.hp
-		clone.active_spells = map(lambda x: x.dup(), self.active_spells)
-		clone.base_armor = self.base_armor
-		clone.armor = self.armor
-		return clone
+		return Player(self.base_hp, self.spells, self.mana_spent, self.mana, self.hp, dict(self.spell_timers), self.armor)
 	
 	def is_wizard(self): 
-		return self.base_mana > 0
+		return len(self.spells) > 1
 	
-	def damage(self, d): 
-		self.hp -= max(1, d - self.armor)
+	def get_spells(self):
+		return (spell for spell_name, spell in self.spells.iteritems() 
+			if self.mana >= spell.mana and self.spell_timers.get(spell_name, 0) <= 1)
 
-	def heal(self, d): 
-		self.hp = min(self.base_hp, self.hp + d)
+def spell(name=None, mana=0, rounds=0, cast={}, over_time={}, uncast={}):
+	class Spell:
+		def __init__(self):
+			self.name = name
+			self.mana = mana
 
-	def cast(self, spell, other_player):
-		spell.cast(self, other_player)
-		self.mana, self.mana_spent = self.mana - spell.mana, self.mana_spent + spell.mana
-		if spell.time > 0:
-			self.active_spells.insert(0, spell)
+		def cast(self, player1, player2): 
+			self.__process(cast, player1, player2)
+			player1.mana -= mana
+			player1.mana_spent += mana
+			if rounds > 0:
+				player1.spell_timers[name] = rounds
 
-	def get_steps(self):
-		for Spell in self.spell_book:
-			is_active = False
-			for active_spell in self.active_spells:
-				if isinstance(active_spell, Spell) and active_spell.time > 1:
-					is_active = True
-					break
+		def over_time(self, player1, player2): 
+			self.__process(over_time, player1, player2)
 
-			if not is_active and self.mana >= Spell.mana:
-				yield Spell()
+		def uncast(self, player1, player2): 
+			self.__process(uncast, player1, player2)
+
+		def __process(self, actions, player1, player2):
+			for action, arg in actions.iteritems():
+				if action == 'damage':  player2.hp -= max(1, arg - player2.armor)
+				if action == 'heal': player1.hp = min(player1.base_hp, player1.hp + arg)
+				if action == 'armor': player1.armor += arg
+				if action == 'recover_mana': player1.mana += arg
+
+	return Spell()
 
 def strategies(player, boss, is_hard):
 	
 	def do_spells(player, other_player):
-		for spell in list(player.active_spells):
-
-			spell.time -= 1
-			spell.effect_over_time(player, other_player)
-		
-			if spell.time == 0:
-				spell.wear_off(player, other_player)
-				player.active_spells.remove(spell)
+		for spell_name, timer in dict(player.spell_timers).iteritems():
+			spell = player.spells[spell_name]
+			spell.over_time(player, other_player)
+			if timer == 1:
+				spell.uncast(player, other_player)
+				del player.spell_timers[spell_name]
+			else:
+				player.spell_timers[spell_name] = timer -1
 
 	states = [(player, boss)]
 	while len(states) > 0:
 		p1_orig, p2_orig = states.pop()
 		
-		for step in p1_orig.get_steps():
+		for spell in p1_orig.get_spells():
 			p1, p2 = p1_orig.dup(), p2_orig.dup()
 
 			if is_hard and p1.is_wizard():	p1.hp -= 1
 			if p1.hp > 0 and p2.hp > 0: do_spells(p1, p2)
 			if p1.hp > 0 and p2.hp > 0: do_spells(p2, p1)
-			if p1.hp > 0 and p2.hp > 0:	p1.cast(step, p2)
+			if p1.hp > 0 and p2.hp > 0: spell.cast(p1, p2)
 			if p1.hp > 0 and p2.hp > 0:	states.append((p2, p1))
 			
 			if p1.is_wizard() and p1.hp > 0 and not p2.hp > 0: yield p1.mana_spent
 			if p2.is_wizard() and p2.hp > 0 and not p1.hp > 0: yield p2.mana_spent
 
-player = (Player(50, 500)
-	.with_spell(magic_missile(mana = 53, damage = 4))
-	.with_spell(drain(mana = 73, damage = 2, heal = 2))
-	.with_spell(shield(mana = 113, time = 6, armor= 7))
-	.with_spell(poison(mana = 173, time = 6, damage = 3))
-	.with_spell(recharge(mana = 229, time = 5, mana_recharged = 101)))
+player = Player.create(50, 500, [
+			spell(name = 'Magic missile', mana=53, cast={'damage': 4}),
+			spell(name = 'Drain', mana=73, cast={'damage': 2, 'heal': 2}),
+			spell(name = 'Shield', mana=113, cast={'armor': 7}, uncast={'armor': -7}, rounds=6),
+			spell(name = 'Poison', mana=173, over_time={'damage': 3}, rounds=6),
+			spell(name = 'Recharge', mana=229, over_time={'recover_mana': 101}, rounds=5)
+		])
 
-boss = (Player(base_hp = 71, base_mana=0)
-	.with_spell(attack(damage = 10)))
+boss = Player.create(71, 0, spells=[spell(name='Attack', cast={'damage': 10})])
 
 print min(strategies(player, boss, False))
 print min(strategies(player, boss, True))
