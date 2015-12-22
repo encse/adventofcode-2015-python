@@ -157,8 +157,6 @@ def do_spells(player, other_player):
 			player.active_spells.remove(spell)
 			
 def init_round(player, other_player):
-		player = player.dup()
-		other_player = other_player.dup()
 
 		do_spells(player, other_player)
 		do_spells(other_player, player)
@@ -182,7 +180,7 @@ player_hp, player_mana, boss_hp, Attack.damage = 50, 500, 71, 10
 player = Player('Player', player_hp,player_hp,0,0,player_mana,player_mana,[MagicMissile, Drain, Shield, Poison, Recharge], [])
 boss = Player('Boss', boss_hp,boss_hp,0,0,0,0,[Attack], [])
 
-def foo(player, boss):
+def foo(player, boss, hard):
 	print 'foo'
 	i=0
 	states = [(player, boss, [])]
@@ -192,7 +190,14 @@ def foo(player, boss):
 		i+=1
 		
 		for step in playerOrig.get_steps():
-			player, boss = turn(playerOrig, bossOrig, step)
+			player = playerOrig.dup()
+			boss = bossOrig.dup()
+			if hard:
+				player.hp -=1
+				if player.hp <= 0:
+					continue
+
+			turn(player, boss, step)
 			if player.hp > 0 and boss.hp <= 0:
 				yield player.mana_spent, list(prev_steps) + [step]
 			elif player.hp > 0 and boss.hp > 0:
@@ -200,7 +205,7 @@ def foo(player, boss):
 				if len(boss_steps) != 1:
 					raise 'wtf'
 				boss_step = boss_steps[0]
-				boss, player = turn(boss, player, boss_step)
+				turn(boss, player, boss_step)
 				if player.hp > 0 and boss.hp <= 0:
 					yield player.mana_spent, list(prev_steps) + [step]
 				elif player.hp > 0:
@@ -215,7 +220,7 @@ def foo(player, boss):
 		log('')
 
 log = no_log
-for mana, steps in foo(player, boss):
+for mana, steps in foo(player, boss, True):
 	log = do_log
 	print mana
 	print steps
