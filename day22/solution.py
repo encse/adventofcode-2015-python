@@ -1,5 +1,5 @@
 class Player:
-	def __init__(self, base_hp, spells, mana_spent, mana, hp, spell_timers,  armor):
+	def __init__(self, base_hp, spells, mana_spent, mana, hp, spell_timers, armor):
 		self.base_hp = base_hp
 		self.spells = spells
 		self.mana_spent = mana_spent
@@ -86,7 +86,7 @@ player = Player.create(50, 500, [
 			spell(name = 'Recharge', mana=229, over_time={'recover_mana': 101}, rounds=5)
 		])
 
-boss = Player.create(71, 0, spells=[spell(name='Attack', cast={'damage': 10})])
+boss = Player.create(71, 0, [spell(name='Attack', cast={'damage': 10})])
 
 print min(strategies(player, boss, False))
 print min(strategies(player, boss, True))
