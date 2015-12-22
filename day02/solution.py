@@ -11,4 +11,5 @@ for line in fileinput.input():
     min_perimeter = 2 * sum(sorted([w,h,l])[:2])
     cube = w*h*l
     ribbon += min_perimeter + cube
-print (paper, ribbon)
+print paper
+print ribbon
