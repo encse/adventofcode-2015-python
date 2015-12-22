@@ -1,67 +1,74 @@
 import itertools as it
 import sys
 
-class Spell:
-	time, damage, mana = 0, 0, 0
-	def cast(self, player, other_player): pass
-	def effect_over_time(self, player, other_player): pass
-	def wear_off(self, player, other_player): pass
-	def dup(self):
-		clone = self.__class__()
-		clone.time = self.time
-		return clone
+def spell(mana=0, time=0):
+	class Spell:
+		def cast(self, player, other_player): pass
+		def effect_over_time(self, player, other_player): pass
+		def wear_off(self, player, other_player): pass
+		def dup(self):
+			clone = self.__class__()
+			clone.time = self.time
+			return clone
+	Spell.mana, Spell.time = mana, time
+	return Spell
 
+def attack(damage):
+	class Action(spell()):
+		def cast(self, player, other_player):
+			other_player.damage(damage)
+	return Action
 
-class Attack(Spell):
-	def cast(self, player, other_player):
-		other_player.damage(self.damage)
+def magic_missile(mana, damage):
+	class Action(spell(mana)):
+		def cast(self, player, other_player):
+			other_player.damage(damage)
+	return Action
 
+def drain(mana, damage, heal):
+	class Action(spell(mana)):
+		def cast(self, player, other_player):
+			player.heal(heal)
+			other_player.damage(damage)
+	return Action
 
-class MagicMissile(Spell):
-	mana, damage = 53, 4
-	def cast(self, player, other_player):
-		other_player.damage(self.damage)
+def shield(mana, time, armor):
+	class Action(spell(mana,time)):
+		def cast(self, player, other_player):
+			player.armor += armor
 
+		def wear_off(self, player, other_player):
+			player.armor -= armor
+	return Action
 
-class Drain(Spell):
-	mana, damage = 73, 2
-	def cast(self, player, other_player):
-		player.heal(self.damage)
-		other_player.damage(self.damage)
+def poison(mana, time, damage):
+	class Action(spell(mana, time)):
+		def effect_over_time(self, player, other_player):
+			other_player.damage(damage)
+	return Action
 
-
-class Shield(Spell):
-	time, mana = 6, 113
-	def cast(self, player, other_player):
-		player.armor += 7
-
-	def wear_off(self, player, other_player):
-		player.armor -= 7
-
-
-class Poison(Spell):
-	time, mana, damage = 6, 173, 3
-	def effect_over_time(self, player, other_player):
-		other_player.damage(Poison.damage)
-
-
-class Recharge(Spell):
-	time, mana = 5, 229
-	def effect_over_time(self, player, other_player):
-		player.mana += 101
-
+def recharge(mana, time, mana_recharged):
+	class Action(spell(mana, time)):
+		def effect_over_time(self, player, other_player):
+			player.mana += mana_recharged
+	return Action
 
 class Player:
-	def __init__(self, base_hp, base_mana, spell_book):
+	def __init__(self, base_hp, base_mana):
 		self.hp = self.base_hp = base_hp
 		self.armor = self.base_armor = 0
 		self.mana = self.base_mana = base_mana
-		self.spell_book = spell_book
+		self.spell_book = []
 		self.active_spells = []
 		self.mana_spent = 0
-	
+		
+	def with_spell(self, spell):
+		self.spell_book.append(spell)
+		return self
+
 	def dup(self):
-		clone = Player(self.base_hp, self.base_mana, self.spell_book) 
+		clone = Player(self.base_hp, self.base_mana)
+		clone.spell_book = self.spell_book 
 		clone.mana_spent = self.mana_spent
 		clone.mana = self.mana
 		clone.hp = self.hp
@@ -114,7 +121,7 @@ def strategies(player, boss, is_hard):
 		
 		for step in p1_orig.get_steps():
 			p1, p2 = p1_orig.dup(), p2_orig.dup()
-			
+
 			if is_hard and p1.is_wizard():	p1.hp -= 1
 			if p1.hp > 0 and p2.hp > 0: do_spells(p1, p2)
 			if p1.hp > 0 and p2.hp > 0: do_spells(p2, p1)
@@ -124,9 +131,15 @@ def strategies(player, boss, is_hard):
 			if p1.is_wizard() and p1.hp > 0 and not p2.hp > 0: yield p1.mana_spent
 			if p2.is_wizard() and p2.hp > 0 and not p1.hp > 0: yield p2.mana_spent
 
-player = Player(50,500,[MagicMissile, Drain, Shield, Poison, Recharge])
-boss = Player(71,0,[Attack])
-Attack.damage = 10
+player = (Player(50, 500)
+	.with_spell(magic_missile(mana = 53, damage = 4))
+	.with_spell(drain(mana = 73, damage = 2, heal = 2))
+	.with_spell(shield(mana = 113, time = 6, armor= 7))
+	.with_spell(poison(mana = 173, time = 6, damage = 3))
+	.with_spell(recharge(mana = 229, time = 5, mana_recharged = 101)))
+
+boss = (Player(base_hp = 71, base_mana=0)
+	.with_spell(attack(damage = 10)))
 
 print min(strategies(player, boss, False))
 print min(strategies(player, boss, True))
