@@ -12,13 +12,6 @@ object Move extends Enumeration {
 
 case class Step(turn:Move.Value, distance:Int) {}
 
-case object Step {
-  def parse(st:String) = Step(
-    Move.withName(st.substring(0, 1)),
-    st.substring(1).toInt
-  )
-}
-
 case class Player(x:Int, y:Int, dir:Dir.Value) {
   def go(step: Step): Player = {
     val newDir = Dir((dir.id + step.turn.id) % 4)
@@ -34,13 +27,12 @@ case class Player(x:Int, y:Int, dir:Dir.Value) {
 
 }
 
-def solve(st:String) = {
-  val steps = st.split(", ").map(Step.parse)
+def solve(steps:List[Step]) = {
   val player = steps.foldLeft(Player(0, 0, Dir.N))(_.go(_))
   player.distance
 }
 
-def solve2(st:String): Int = {
+def solve2(steps:List[Step]): Int = {
 
   @tailrec
   def solveI(steps: List[Step], seen: Set[(Int, Int)], pCurrent: Player): Int = steps match {
@@ -55,15 +47,13 @@ def solve2(st:String): Int = {
 
   def flatten(step: Step) = Step(step.turn, 1) +: List.fill(step.distance - 1)(Step(Move.F, 1))
 
-  val steps = st
-    .split(", ")
-    .map(Step.parse)
-    .flatMap(flatten)
-    .toList
-
-  solveI(steps, Set((0, 0)), Player(0, 0, Dir.N))
+  solveI(steps.flatMap(flatten), Set((0, 0)), Player(0, 0, Dir.N))
 }
 
-val input = io.Source.stdin.getLines.mkString
-println(solve(input))
-println(solve2(input))
+var input = io.Source.stdin.getLines.mkString
+
+val steps = for(st <- input.split(", ").toList)
+  yield Step(Move.withName(st.substring(0, 1)), st.substring(1).toInt)
+
+println(solve(steps))
+println(solve2(steps))
