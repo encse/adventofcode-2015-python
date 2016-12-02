@@ -1,13 +1,13 @@
+
 class Map(st:String) {
-  private val map = st.split("\n")
+  private val map = st.split("\\|")
+  val ccol: Int = map(0).length
+  val crow: Int = map.length
 
-  val ccol = map(0).length
-  val crow = map.length
-
-  def isValid(irow: Int, icol: Int) =
+  def isValid(irow: Int, icol: Int): Boolean =
     irow >= 0 && irow < crow && icol >= 0 && icol < ccol && map(icol)(irow) != ' '
 
-  def get(irow: Int, icol: Int) = map(irow)(icol).toString
+  def get(irow: Int, icol: Int): String = map(irow)(icol).toString
 }
 
 case class Player(map: Map, irow: Int, icol: Int) {
@@ -48,5 +48,5 @@ def solve(map: Map, lines:Array[String]) = {
 }
 
 var input = io.Source.stdin.getLines.toArray
-println(solve(new Map("123\n456\n789"), input))
-println(solve(new Map("  1  \n 234 \n56789\n ABC \n  D  "), input))
+println(solve(new Map("123|456|789"), input))
+println(solve(new Map("  1  | 234 |56789| ABC |  D  "), input))
