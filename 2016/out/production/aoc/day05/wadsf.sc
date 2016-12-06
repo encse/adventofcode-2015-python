@@ -1,1 +1,0 @@
-Integer.toHexString(123)
