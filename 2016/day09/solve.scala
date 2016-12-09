@@ -5,7 +5,7 @@ case object Day09 extends App {
 
   private val regexMarker: Regex = """\((\d+)x(\d+)\)""".r
 
-  def decompressLength(st:String, acc:Long, ichFirst:Int, ichLim:Int, recursive:Boolean): Long = {
+  def decompressLength(st: String, acc: Long, ichFirst: Int, ichLim: Int, recursive: Boolean): Long = {
     if (ichFirst == ichLim) {
       acc
     } else if (st(ichFirst) == '(') {
@@ -25,13 +25,12 @@ case object Day09 extends App {
     }
   }
 
-  def solve1(line: String): Long = {
+  def solve1(line: String): Long =
     decompressLength(line, 0, 0, line.length, recursive = false)
-  }
 
-  def solve2(line: String): Long = {
+  def solve2(line: String): Long =
     decompressLength(line, 0, 0, line.length, recursive = true)
-  }
+
 
   var input = Source.fromFile(productPrefix.toLowerCase + "/input.in").mkString
   println(solve1(input))
