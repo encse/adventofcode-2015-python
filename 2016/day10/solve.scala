@@ -1,3 +1,4 @@
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 import scala.util.matching.Regex
 case class BotId(v:String) extends AnyVal{
@@ -12,7 +13,7 @@ class Factory() {
 
   def getBot(botId: BotId): Bot = {
     if (!bots.contains(botId)) {
-      bots += ((botId, new Bot(botId, None, None, None, None)))
+      bots += ((botId, new Bot(botId, None, None)))
     }
     bots(botId)
   }
@@ -29,14 +30,13 @@ class Factory() {
   }
 
   def step():Boolean = {
-    val optionBot = bots.values.find(bot => bot.value2.isDefined)
+    val optionBot = bots.values.find(bot => bot.values.length == 2)
     optionBot match {
       case None => false
       case Some(bot) => {
-        getBot(bot.outputLow.get).addValue(Value(Math.min(bot.value1.get.v, bot.value2.get.v)))
-        getBot(bot.outputHi.get).addValue(Value(Math.max(bot.value1.get.v, bot.value2.get.v)))
-        bot.value1 = None
-        bot.value2 = None
+        getBot(bot.outputLow.get).addValue(Value(Math.min(bot.values(0).v, bot.values(1).v)))
+        getBot(bot.outputHi.get).addValue(Value(Math.max(bot.values(0).v, bot.values(1).v)))
+        bot.values.clear()
         true
       }
     }
@@ -50,25 +50,22 @@ class Factory() {
 
 class Bot(val botId:BotId,
           var outputLow:Option[BotId],
-          var outputHi:Option[BotId],
-          var value1:Option[Value],
-          var value2:Option[Value]) {
+          var outputHi:Option[BotId]) {
+
+  val values: ArrayBuffer[Value] = ArrayBuffer()
 
   def addValue(value: Value) = {
-    require(!value2.isDefined)
-    if (value1.isDefined)
-      value2 = Some(value)
-    else
-      value1 = Some(value)
+    require(values.length < 2)
+    values.append(value)
   }
+
   def tsto[T](option: Option[T]) =
     option match {
       case Some(t) => t.toString
       case None => "none"
     }
   override def toString: String = {
-
-    s"$botId: ${tsto(value1)} -> ${tsto(outputLow)}; ${tsto(value2)} -> ${tsto(outputHi)}"
+    s"$botId: (${values.mkString(",")}) -> (${tsto(outputLow)}, ${tsto(outputHi)})"
   }
 }
 
@@ -93,23 +90,19 @@ case object Day10 extends App {
 
   def solve1(input:List[String]): (Int, String) = {
     var factory = parse(input, new Factory())
-    val value17 = Some(Value(17))
-    val value61 = Some(Value(61))
+    val valuesToCheck = Set(Value(17), Value(61))
   //  println(factory)
     while(true){
-      val optionBot = factory.bots.values.find(bot =>
-        bot.value2 == value17 && bot.value1 == value61 ||
-        bot.value1 == value17 && bot.value2 == value61
-      )
+      val optionBot = factory.bots.values.find(bot => bot.values.toSet == valuesToCheck)
       if(optionBot.isDefined) {
         while (factory.step()) {
           ;
         }
         println(factory)
         return (
-          factory.getBot(BotId("output 0")).value1.get.v *
-            factory.getBot(BotId("output 1")).value1.get.v *
-            factory.getBot(BotId("output 2")).value1.get.v,
+          factory.getBot(BotId("output 0")).values(0).v *
+            factory.getBot(BotId("output 1")).values(0).v *
+            factory.getBot(BotId("output 2")).values(0).v,
           optionBot.get.botId.v)
       }
       factory.step()
