@@ -108,10 +108,20 @@ case class Building(levels: Array[Level], elevator:Int) {
     single ::: double
   }
 
-  def key(elements: Elements): BigInt =
-    levels.foldLeft(BigInt(elevator)) {
-      case (res, level) => res * elements.Lim * elements.Lim + (level.generators * elements.Lim + level.microchips)
-    }
+  def key(elements: Elements): Long = {
+    var x = 0L
+    x += elevator.toLong << (4*14)
+    x += (((levels(3).generators << 7) + levels(3).microchips).toLong << (3*14))
+    x += (((levels(2).generators << 7) + levels(2).microchips).toLong << (2*14))
+    x += (((levels(1).generators << 7) + levels(1).microchips).toLong << (1*14))
+    x += (((levels(0).generators << 7) + levels(0).microchips).toLong << (0*14))
+    x
+
+//    val levelsPack = levels.foldLeft(0L) {
+//      case (res, level) => res * d * d + (level.generators * d + level.microchips)
+//    }
+//    levelsPack + (elevator << 56)
+  }
 }
 
 case object Day11 extends App {
@@ -139,24 +149,30 @@ case object Day11 extends App {
   }
 
   def solve(input:Array[String]): Int = {
+    val dtStart = System.currentTimeMillis()
     val elements = new Elements()
     val queue = mutable.Queue((0, parse(input, elements)))
-    var seen: Set[BigInt] = Set()
+    var seen: Set[Long] = Set()
 
     while (queue.nonEmpty) {
       val (distance, building) = queue.dequeue()
-      val key = building.key(elements)
 
-      if (!seen.contains(key)) {
+      for (buildingNew <- building.steps()) {
+        val key = buildingNew.key(elements)
+        //((key >> 2) & 0xfffffffL) == 0
 
-        seen += key
+        //if (buildingNew.levels.forAll(level => level.ilevel == building.levels.length - 1 || level.isEmpty)) {
+        if((key & (1L << 3*14)-1) == 0) {
+          println(BigInt(key).toString(2))
+          println(BigInt((1L << 3*14)-1).toString(2) )
+          println(System.currentTimeMillis() - dtStart)
+          return distance + 1
+        }
 
-        if (building.levels.forall(level => level.ilevel == building.levels.length - 1 || level.isEmpty))
-          return distance
-
-        for (buildingNew <- building.steps())
+        if (!seen.contains(key)) {
+          seen += key
           queue.enqueue((distance + 1, buildingNew))
-
+        }
       }
     }
     -1
