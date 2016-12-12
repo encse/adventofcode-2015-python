@@ -1,11 +1,23 @@
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.Queue
 import scala.io.Source
-import scala.util.matching.Regex
+
 trait Item {def kind: Int}
 case class Generator(kind:Int) extends Item
 case class Microchip(kind:Int) extends Item
+
+class Elements {
+  var Lim = 1
+  private var elementToKind: Map[String, Int] = Map()
+
+  def getKind(name: String): Int = {
+    if (!elementToKind.contains(name)) {
+      elementToKind += ((name, Lim))
+      Lim *= 2
+    }
+    elementToKind(name)
+  }
+}
 
 case class Level(ilevel:Int, generators:Int, microchips:Int) {
   def addGenerator(generator: Generator): Level =
@@ -20,15 +32,11 @@ case class Level(ilevel:Int, generators:Int, microchips:Int) {
   def removeMicrochip(microchip: Microchip): Level =
     Level(ilevel, generators, microchips & ~microchip.kind)
 
-  def valid = {
-    val fedettChipek = microchips & generators
-    val nemFedettChipek = microchips - fedettChipek
-    val nemFedettGeneratorok = generators - fedettChipek
-    nemFedettChipek == 0 || generators == 0
-  }
+  def isEmpty: Boolean = generators == 0 && microchips == 0
 
+  def isValid: Boolean = generators == 0 || microchips - (microchips & generators) == 0
 
-  def allItems(): List[Item] = {
+  def items(): List[Item] = {
     var res: List[Item] = Nil
     var i = 1
     while (i <= generators || i <= microchips) {
@@ -41,8 +49,6 @@ case class Level(ilevel:Int, generators:Int, microchips:Int) {
     res
   }
 
-  def isEmpty = generators == 0 && microchips == 0
-
 }
 
 case class Building(levels: Array[Level], elevator:Int) {
@@ -51,10 +57,10 @@ case class Building(levels: Array[Level], elevator:Int) {
     s"$stLevels\nElevator: $elevator"
   }
 
-  def adjustLevels(ilevelA: Int, levelA: Level, ilevelB: Int, levelB: Level): Array[Level] = {
+  def adjustLevels(levelA: Level, levelB: Level): Array[Level] = {
     val newLevels = levels.clone()
-    newLevels(ilevelA) = levelA
-    newLevels(ilevelB) = levelB
+    newLevels(levelA.ilevel) = levelA
+    newLevels(levelB.ilevel) = levelB
     newLevels
   }
 
@@ -64,7 +70,7 @@ case class Building(levels: Array[Level], elevator:Int) {
     else {
       var levelSrc = levels(elevatorSrc)
       var levelDst = levels(elevatorDst)
-      for(item <- items) {
+      for (item <- items) {
         item match {
           case generator@Generator(_) =>
             levelSrc = levelSrc.removeGenerator(generator)
@@ -75,8 +81,8 @@ case class Building(levels: Array[Level], elevator:Int) {
             levelDst = levelDst.addMicrochip(microchip)
         }
       }
-      if (levelSrc.valid && levelDst.valid)
-        Some(Building(adjustLevels(elevatorSrc, levelSrc, elevatorDst, levelDst), elevatorDst))
+      if (levelSrc.isValid && levelDst.isValid)
+        Some(Building(adjustLevels(levelSrc, levelDst), elevatorDst))
       else
         None
     }
@@ -84,15 +90,15 @@ case class Building(levels: Array[Level], elevator:Int) {
 
   def steps(): List[Building] = {
     val single = for {
-        item <- levels(elevator).allItems()
-        elevatorDst <- List(elevator + 1, elevator - 1)
-        optionalBuilding = move(List(item), elevator, elevatorDst)
-        if optionalBuilding.isDefined
-      } yield optionalBuilding.get
+      item <- levels(elevator).items()
+      elevatorDst <- List(elevator + 1, elevator - 1)
+      optionalBuilding = move(List(item), elevator, elevatorDst)
+      if optionalBuilding.isDefined
+    } yield optionalBuilding.get
 
     val double = for {
-      itemA <- levels(elevator).allItems()
-      itemB <- levels(elevator).allItems()
+      itemA <- levels(elevator).items()
+      itemB <- levels(elevator).items()
       if itemA != itemB
       elevatorDst <- List(elevator + 1, elevator - 1)
       optionalBuilding = move(List(itemA, itemB), elevator, elevatorDst)
@@ -102,14 +108,10 @@ case class Building(levels: Array[Level], elevator:Int) {
     single ::: double
   }
 
-  def key():BigInt = {
-    var res = 0
-    for(level <- levels){
-      res = res * 1000000 + (level.generators * 1000 + level.microchips)
+  def key(elements: Elements): BigInt =
+    levels.foldLeft(BigInt(elevator)) {
+      case (res, level) => res * elements.Lim * elements.Lim + (level.generators * elements.Lim + level.microchips)
     }
-    res * 1000000 + elevator
-  }
-
 }
 
 case object Day11 extends App {
@@ -117,28 +119,18 @@ case object Day11 extends App {
   val regexMicrochip = """([^ ]*)-compatible""".r
   val regexGenerator = """([^ ]*) generator""".r
 
-  def parse(levelDescriptions:Array[String]):Building = {
-    var nextMask = 1
-    var kindToMask: Map[String,Int] = Map()
-    def ensureKind(kind:String): Int = {
-      if (!kindToMask.contains(kind)) {
-        kindToMask += ((kind, nextMask))
-        nextMask = nextMask << 1
-      }
-      kindToMask(kind)
-    }
-
+  def parse(levelDescriptions:Array[String], elements: Elements):Building = {
     val levels: ArrayBuffer[Level] = ArrayBuffer()
-    for(levelDescription <- levelDescriptions) {
+    for (levelDescription <- levelDescriptions) {
       val microchipKinds = regexMicrochip.findAllMatchIn(levelDescription).map(m => m.group(1))
       val generatorKinds = regexGenerator.findAllMatchIn(levelDescription).map(m => m.group(1))
 
       val microchips = microchipKinds.foldLeft(0) {
-        case (res, kind) => res | ensureKind(kind)
+        case (res, element) => res | elements.getKind(element)
       }
 
       val generators = generatorKinds.foldLeft(0) {
-        case (res, kind) => res | ensureKind(kind)
+        case (res, element) => res | elements.getKind(element)
       }
 
       levels.append(Level(levels.length, generators, microchips))
@@ -146,32 +138,30 @@ case object Day11 extends App {
     Building(levels.toArray, 0)
   }
 
-  def solve1(input:Array[String]): Int = {
-    val x= parse(input)
-    println(x)
-    val queue = Queue((0, x))
-    var seen:Set[BigInt] = Set()
-    while(queue.nonEmpty){
-      val (steps, building) = queue.dequeue()
-      seen += building.key()
-//      println("----------------")
-//      println(building)
-//      println()
-      if (building.levels.forall(level => level.ilevel == building.levels.length -1 || level.isEmpty)) {
-        return steps
-      }
-      for (buildingNew <- building.steps()) {
-        if(!seen.contains(buildingNew.key())) {
-          seen += buildingNew.key()
-        //  println(buildingNew)
-         // println()
-          queue.enqueue((steps + 1, buildingNew))
-        }
+  def solve(input:Array[String]): Int = {
+    val elements = new Elements()
+    val queue = mutable.Queue((0, parse(input, elements)))
+    var seen: Set[BigInt] = Set()
+
+    while (queue.nonEmpty) {
+      val (distance, building) = queue.dequeue()
+      val key = building.key(elements)
+
+      if (!seen.contains(key)) {
+
+        seen += key
+
+        if (building.levels.forall(level => level.ilevel == building.levels.length - 1 || level.isEmpty))
+          return distance
+
+        for (buildingNew <- building.steps())
+          queue.enqueue((distance + 1, buildingNew))
+
       }
     }
-    return -1
+    -1
   }
 
-  var input = Source.fromFile(productPrefix.toLowerCase + "/input2.in").getLines().toArray
-  println(solve1(input))
+  println(solve(Source.fromFile(productPrefix.toLowerCase + "/input.in").getLines().toArray))
+  println(solve(Source.fromFile(productPrefix.toLowerCase + "/input2.in").getLines().toArray))
 }
