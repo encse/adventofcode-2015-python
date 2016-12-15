@@ -1,13 +1,38 @@
 import scala.collection.mutable
 
-class Matcher(val func:String => String) {
+class Matcher(val salt:String, val func:String => String) {
 
-  case class CacheObj(long: Option[Char], short: Option[Char])
+  private val hashCache: mutable.Map[String, String] = mutable.Map()
+  private val matchCache: mutable.Map[Char, mutable.Queue[Int]] = mutable.Map()
+  var i = 0
+  def step(): Option[Int] = {
 
-  private val cache: mutable.Map[String, CacheObj] = mutable.Map()
+    for (ch <- getMatch(salt + i.toString, 5)) {
+      if (!matchCache.contains(ch))
+        matchCache(ch) = mutable.Queue()
+      matchCache(ch).enqueue(i)
+    }
 
-  private def getMatch(hash: String, l: Int): Option[Char] = {
+    for (queue <- matchCache.values) {
+      while (queue.nonEmpty && queue.head + 1000 <= i)
+        queue.dequeue()
+    }
 
+    var res: Option[Int] = None
+    if (i >= 1000) {
+      for (ch <- getMatch(salt + (i - 1000).toString, 3)) {
+        if (matchCache.contains(ch) && matchCache(ch).nonEmpty)
+          res = Some(i - 1000)
+      }
+    }
+    i += 1
+    res
+  }
+
+  private def getMatch(st: String, l: Int): Option[Char] = {
+    if(!hashCache.contains(st))
+      hashCache(st) = func(st)
+    val hash = hashCache(st)
     val optionI = ((l - 1) until hash.length).find {
       i => (1 until l).forall(k => hash(i - k) == hash(i))
     }
@@ -15,22 +40,9 @@ class Matcher(val func:String => String) {
     optionI.map(i => hash(i))
   }
 
-  private def ensureCache(st: String): CacheObj = {
-    if (!cache.contains(st)) {
-      val hash = func(st)
-      cache(st) = CacheObj(long = getMatch(hash, 5), short = getMatch(hash, 3))
-    }
-
-    cache(st)
-  }
-
-  def longMatch(st: String): Option[Char] = ensureCache(st).long
-
-  def shortMatch(st: String): Option[Char] = ensureCache(st).short
 }
 
 case object Day14 extends App {
-
 
   def md5(st: String): String = {
     def toHexString(md5: Array[Byte]): String =
@@ -44,33 +56,36 @@ case object Day14 extends App {
       if (byte < 10) byte + '0' else (byte - 10) +'a'
 
     val md5 = java.security.MessageDigest.getInstance("MD5")
-    val res = (0 until 2017).foldLeft(st.getBytes()) { (bytes, _) =>
-        md5.digest(bytes).flatMap(byte => Array(toHexChar((byte & 0xff) >> 4).toByte, toHexChar(byte & 0xf).toByte))
+    val res = (0 until 2017).foldLeft(st.getBytes()) { (bytes, _) => {
+        val hash = md5.digest(bytes)
+        var ab = Array.fill(hash.length * 2)(0.toByte)
+        for (i <- 0 until hash.length) {
+          ab(i * 2) = toHexChar((hash(i) & 0xff) >> 4).toByte
+          ab(i * 2 + 1) = toHexChar(hash(i) & 0xf).toByte
+        }
+        ab
+      }
     }
     res.map(ch => ch.toChar).mkString
   }
 
-  def hasLongMatch(salt:String, ch: Char, iStart: Int, matcher: Matcher): Boolean = {
-    (iStart to iStart + 1000).exists { i => matcher.longMatch(salt + i.toString).contains(ch)}
-  }
-
   def solve(salt: String, matcher: Matcher): Int = {
+    val dt = System.currentTimeMillis()
     var keyCount = 0
     var lastKeyIndex = 0
-    var i = 0
 
     while (keyCount < 64) {
-      for (ch <- matcher.shortMatch(salt + i.toString) if hasLongMatch(salt, ch, i+1, matcher)) {
+      for (i <- matcher.step()) {
         keyCount += 1
         lastKeyIndex = i
       }
-      i+=1
     }
+    println(System.currentTimeMillis() - dt, "ms")
     lastKeyIndex
   }
 
-  def solve1(salt:String) = solve(salt, new Matcher(md5))
-  def solve2(salt:String) = solve(salt, new Matcher(repeatedMd5))
+  def solve1(salt:String): Int = solve(salt, new Matcher(salt, md5))
+  def solve2(salt:String): Int = solve(salt, new Matcher(salt, repeatedMd5))
 
   println(solve1("jlmsuwbz"))
   println(solve2("jlmsuwbz"))
