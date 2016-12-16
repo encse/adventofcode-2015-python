@@ -1,29 +1,36 @@
-import scala.io.Source
+import scala.collection.mutable
 
 case object Day16 extends App {
 
-  def solve(input:String, length:Int):String = {
-    var res = input
-    while (res.length < length){
-      val a = res
-      val b = res.reverse.map{
-        case '0' => 1
-        case '1' => 0
-      }.mkString
-      res = new StringBuilder(a).append('0').append(b).mkString
-    }
-    res = res.substring(0, length)
-    while(res.length % 2 == 0){
-      var checksum:StringBuilder = new StringBuilder
-      for(i <- 0 until res.length/2){
-        checksum.append((if (res(2*i) == res(2*i+1)) "1" else "0"))
+  def encode(st: String, length: Int): String = {
+    if (st.length >= length)
+      st.substring(0, length)
+    else {
+      val a = st
+      val b = st.reverse.map {
+        case '0' => '1'
+        case '1' => '0'
       }
-      res = checksum.mkString
+      encode(
+        new mutable.StringBuilder()
+          .append(a)
+          .append('0')
+          .appendAll(b).mkString,
+        length)
     }
-    res
   }
-  def solve1(st:String): String = solve(st, 272)
-  def solve2(st:String): String = solve(st, 35651584)
+
+  def checksum(st: String): String =
+    if (st.length % 2 == 1)
+      st
+    else
+      checksum((0 until st.length / 2).map(i => if (st(2 * i) == st(2 * i + 1)) "1" else "0").mkString)
+
+  def solve(input: String, length: Int): String = checksum(encode(input, length))
+
+  def solve1(st: String): String = solve(st, 272)
+
+  def solve2(st: String): String = solve(st, 35651584)
 
   val input = "01111010110010011"
   println(solve1(input))
