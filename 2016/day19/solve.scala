@@ -1,60 +1,43 @@
-
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
-
-class Elf(var i:Int, var elfPrev: Elf, var elfNext:Elf) {
-}
+import scala.annotation.tailrec
 
 case object Day19 extends App {
 
-  def solve1(m: Int): Int = {
+  class Elf(var id: Int, var elfPrev: Elf, var elfNext: Elf)
 
-    val rgelf = (1 to m).map(i => new Elf(i, null, null)).toArray
+  def solve(ielfStart: Int, ielfVictimStart: Int, celf: Int,
+            elfNextVictim: (Elf, Int) => Elf): Int = {
+
+    @tailrec
+    def solveRecursive(elf: Elf, elfVictim: Elf, celf: Int): Int = {
+      if (celf == 1) {
+        elf.id
+      } else {
+        val elfPrefT = elfVictim.elfPrev
+        val elfNextT = elfVictim.elfNext
+        elfPrefT.elfNext = elfNextT
+        elfNextT.elfPrev = elfPrefT
+        solveRecursive(elf.elfNext, elfNextVictim(elfVictim, celf - 1), celf - 1)
+      }
+    }
+
+    val rgelf = (1 to celf).map(i => new Elf(i, null, null)).toArray
     for (i <- rgelf.indices) {
-      rgelf(i).elfNext = rgelf((i + 1) % m)
-      rgelf(i).elfPrev = rgelf((i - 1 + m) % m)
+      rgelf(i).elfNext = rgelf((i + 1) % celf)
+      rgelf(i).elfPrev = rgelf((i - 1 + celf) % celf)
     }
-    var elf = rgelf(0)
-    var celves = m
-    while (celves > 1) {
-      val elfAldozat = elf.elfNext
-      val elfPref = elfAldozat.elfPrev
-      val elfNext = elfAldozat.elfNext
-      elfPref.elfNext = elfNext
-      elfNext.elfPrev = elfPref
-      celves -= 1
-      elf = elf.elfNext
-    }
-    elf.i
+    solveRecursive(rgelf(ielfStart), rgelf(ielfVictimStart), celf)
   }
 
-  def solve2(m: Int): Int = {
-    val rgelf = (1 to m).map(i => new Elf(i, null, null)).toArray
-    for (i <- rgelf.indices) {
-      rgelf(i).elfNext = rgelf((i + 1) % m)
-      rgelf(i).elfPrev = rgelf((i - 1 + m) % m)
-    }
+  def solve1(celf: Int): Int = {
+    solve(0, 1, celf, (elfVictim, _) =>
+      elfVictim.elfNext.elfNext
+    )
+  }
 
-    var elf = rgelf(0)
-    var elfAldozat = rgelf(m / 2)
-    var celves = m
-    while (celves > 1) {
-
-      val elfPref = elfAldozat.elfPrev
-      val elfNext = elfAldozat.elfNext
-      elfPref.elfNext = elfNext
-      elfNext.elfPrev = elfPref
-      celves -= 1
-      elf = elf.elfNext
-      if(celves % 2 == 1)
-        elfAldozat = elfAldozat.elfNext
-      else
-        elfAldozat = elfAldozat.elfNext.elfNext
-
-    }
-
-    elf.i
+  def solve2(celf: Int): Int = {
+    solve(0, celf / 2, celf, (elfVictim, celf) =>
+      if (celf % 2 == 1) elfVictim.elfNext else elfVictim.elfNext.elfNext
+    )
   }
 
   val input = 3017957
