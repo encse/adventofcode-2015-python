@@ -4,41 +4,34 @@ case object Day19 extends App {
 
   class Elf(var id: Int, var elfPrev: Elf, var elfNext: Elf)
 
-  def solve(ielfStart: Int, ielfVictimStart: Int, celf: Int,
-            elfNextVictim: (Elf, Int) => Elf): Int = {
+  def solve(elfCount: Int, ielfStart: Int, ielfVictimStart: Int, nextVictimCallback: (Elf, Int) => Elf): Int = {
 
     @tailrec
-    def solveRecursive(elf: Elf, elfVictim: Elf, celf: Int): Int = {
-      if (celf == 1) {
+    def solveRecursive(elf: Elf, elfVictim: Elf, elfCount: Int): Int = {
+      if (elfCount == 1) {
         elf.id
       } else {
-        val elfPrefT = elfVictim.elfPrev
-        val elfNextT = elfVictim.elfNext
-        elfPrefT.elfNext = elfNextT
-        elfNextT.elfPrev = elfPrefT
-        solveRecursive(elf.elfNext, elfNextVictim(elfVictim, celf - 1), celf - 1)
+        elfVictim.elfPrev.elfNext = elfVictim.elfNext
+        elfVictim.elfNext.elfPrev = elfVictim.elfPrev
+        solveRecursive(elf.elfNext, nextVictimCallback(elfVictim, elfCount - 1), elfCount - 1)
       }
     }
 
-    val rgelf = (1 to celf).map(i => new Elf(i, null, null)).toArray
-    for (i <- rgelf.indices) {
-      rgelf(i).elfNext = rgelf((i + 1) % celf)
-      rgelf(i).elfPrev = rgelf((i - 1 + celf) % celf)
+    val elves = (1 to elfCount).map(i => new Elf(i, null, null)).toArray
+    for (i <- elves.indices) {
+      elves(i).elfNext = elves((i + 1) % elfCount)
+      elves(i).elfPrev = elves((i - 1 + elfCount) % elfCount)
     }
-    solveRecursive(rgelf(ielfStart), rgelf(ielfVictimStart), celf)
+    solveRecursive(elves(ielfStart), elves(ielfVictimStart), elfCount)
   }
 
-  def solve1(celf: Int): Int = {
-    solve(0, 1, celf, (elfVictim, _) =>
-      elfVictim.elfNext.elfNext
-    )
-  }
+  def solve1(elfCount: Int): Int = 
+    solve(elfCount, 0, 1, (elfVictim, _) =>
+          elfVictim.elfNext.elfNext)
 
-  def solve2(celf: Int): Int = {
-    solve(0, celf / 2, celf, (elfVictim, celf) =>
-      if (celf % 2 == 1) elfVictim.elfNext else elfVictim.elfNext.elfNext
-    )
-  }
+  def solve2(elfCount: Int): Int =
+    solve(elfCount, 0, elfCount / 2, (elfVictim, elfCount) =>
+          if (elfCount % 2 == 1) elfVictim.elfNext else elfVictim.elfNext.elfNext)
 
   val input = 3017957
   println(solve1(input))
